@@ -1,33 +1,34 @@
-import cv2
+from cv2 import imread, imwrite, imshow, waitKey
 import numpy as np
 import random
 
 # Загрузка изображения
-im = cv2.imread(r"images\cat_in_grass.jpg")
+im = imread(r"images\cat_in_grass.jpg")
 if im is None:
     raise FileNotFoundError("Изображение не найдено. Проверьте путь.")
 
 h, w = im.shape[:2]
-stripe_h = 100
-# stripe_h = int(input("Введите высоту полосы: "))
+print("Высота изображения:", h)
+# stripe_h = 100
+stripe_h = int(input("Введите высоту полосы: "))
 
 # На полосы
-stripes = [im[i : i + stripe_h].copy() for i in range(0, h, stripe_h)]
+new_h = (h // stripe_h) * stripe_h
+im_cropped = im[:new_h]
+stripes = [im_cropped[i : i + stripe_h].copy() for i in range(0, h, stripe_h)]
 
 random.shuffle(stripes)
-
-shuffled = np.zeros_like(im)
 
 y = 0
 for stripe in stripes:
     h_s = stripe.shape[0]
-    im[y : y + h_s, :] = stripe
+    im_cropped[y : y + h_s, :] = stripe
     y += h_s
 
 # Результат
-cv2.imshow("Shuffled", im)
-key = cv2.waitKey(0)
+imshow("Shuffled", im_cropped)
+key = waitKey(0)
 
 if key == 13:
-    cv2.imwrite(r"images\cat_in_grass_shuffled.jpg", im)
-cv2.destroyAllWindows()
+    imwrite(r"images\cat_in_grass_shuffled.jpg", im_cropped)
+    print("Изображение сохранено!")
