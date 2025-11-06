@@ -8,14 +8,19 @@ if im is None:
 blurred = cv2.GaussianBlur(im, (31, 31), 15)
 gray_bgr = cv2.cvtColor(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
 
-x, y = im.shape[1] // 2, im.shape[0] // 2
-win = "Task 5: Interactive"
+accum = np.zeros(im.shape[:2], np.float32)
+win = "Task 7: Permanent"
 
 
-def on_mouse(event, px, py, *_):
-    global x, y
+def on_mouse(event, x, y, *_):
+    global accum
     if event == cv2.EVENT_MOUSEMOVE:
-        x, y = px, py
+        r = cv2.getTrackbarPos("Radius", win)
+        blur = cv2.getTrackbarPos("Blur", win)
+        temp = np.zeros_like(accum)
+        cv2.circle(temp, (x, y), r, 1.0, -1)
+        temp = cv2.GaussianBlur(temp, (blur * 2 + 1, blur * 2 + 1), blur)
+        accum[:] = np.clip(accum + temp, 0, 1)
 
 
 cv2.namedWindow(win)
@@ -23,19 +28,11 @@ cv2.setMouseCallback(win, on_mouse)
 cv2.createTrackbar("Radius", win, 50, 200, lambda _: None)
 cv2.createTrackbar("Blur", win, 15, 50, lambda _: None)
 
-print("Двигайте мышь. Нажмите любую клавишу для выхода.")
+print("Водите мышью — след остаётся. Нажмите любую клавишу для выхода.")
 
 while True:
-    r = cv2.getTrackbarPos("Radius", win)
-    blur = cv2.getTrackbarPos("Blur", win)
-
-    mask = np.zeros(im.shape[:2], np.float32)
-    cv2.circle(mask, (x, y), r, 1.0, -1)
-    mask = cv2.GaussianBlur(mask, (blur * 2 + 1, blur * 2 + 1), blur)
-
-    m3 = np.stack([mask] * 3, -1)
+    m3 = np.stack([accum] * 3, -1)
     res = (blurred * (1 - m3) + gray_bgr * m3).astype(np.uint8)
-
     cv2.imshow(win, res)
     if cv2.waitKey(30) != -1:
         break
